@@ -11,7 +11,7 @@ Docker Containers And Python APIS For Mem0, Graphiti and Cognee AI Memory Agents
 ## Mem0 Endpoints
 
 Add memory:
-
+```
 curl -X POST http://localhost:8000/add \
   -H "Content-Type: application/json" \
   -d '{
@@ -19,12 +19,12 @@ curl -X POST http://localhost:8000/add \
     "data": "Alice lives in wonderland and loves wolves",
     "category": "personal"
 }'
-
+```
 Response
 {"message":"Memory added","status":"success"}
 
 Query memory:
-
+```
 curl -X POST http://localhost:8000/search \
   -H "Content-Type: application/json" \
   -d '{
@@ -32,7 +32,7 @@ curl -X POST http://localhost:8000/search \
     "query": "Alice lives in wonderland and loves wolves",
     "category": "personal"
 }'
-
+```
 Response
 {
   "results": [
@@ -65,12 +65,13 @@ Response
 }
 
 Delete memories older than 90 days:
+```
 curl -X POST http://localhost:8000/delete_old \
   -H "Content-Type: application/json" \
   -d '{
     "user_id": "alice_uuid"
 }'
-
+```
 Response
 {"deleted_count":0,"status":"success"}
 
@@ -84,7 +85,7 @@ Response
 ## Graphiti Endpoints
 
 Add facts:
-
+```
 curl -X POST http://localhost:8001/ingest \
   -H "Content-Type: application/json" \
   -d '{
@@ -92,11 +93,12 @@ curl -X POST http://localhost:8001/ingest \
     "data": "The Sun is a G-type main-sequence star located at the center of the Solar System. It is composed primarily of hydrogen and helium with trace amounts of heavier elements such as oxygen, carbon, neon, and iron. Through nuclear fusion in its core, the Sun converts hydrogen into helium, releasing vast amounts of energy that radiate outward and provide light and heat to the planets orbiting it. This energy drives Earth’s climate, weather systems, and ultimately supports life. The Sun’s immense gravitational pull governs the motion of the Solar System, keeping planets, asteroids, and comets in stable orbits.",
     "category": "scientific-technical"
   }'
-
+```
 Response:
 {"episode_name":"User_user_456_Ingest_1766964011","group_id":"user_456_scientific-technical","message":"Ingested for user user_456, category scientific-technical","status":"success"}
 
 Query facts:
+```
 curl -X POST http://localhost:8001/strict_search \
   -H "Content-Type: application/json" \
   -d '{
@@ -104,7 +106,7 @@ curl -X POST http://localhost:8001/strict_search \
     "query": "The Sun is a G-type main-sequence star located at the center of the Solar System.",
     "category": "scientific-technical"
   }'
-
+```
 Response:
 {
   "count": 10,
@@ -146,12 +148,13 @@ Response:
 }
 
 Delete facts older than 90 days:
+```
 curl -X POST http://localhost:8001/delete_old \
   -H "Content-Type: application/json" \
   -d '{
 "user_id": "user_456"
 }'
-
+```
 Response:
 {"message":"Removed 0 episodes and 0 orphaned nodes.","status":"success"}
 
@@ -165,7 +168,7 @@ Response:
 ## Cognee Endpoints
 
 Add cognitive memory:
-
+```
 curl -X POST http://127.0.0.1:8002/add \
   -H "Content-Type: application/json" \
   -d '{
@@ -173,12 +176,12 @@ curl -X POST http://127.0.0.1:8002/add \
     "category": "work",
     "data": "The Q3 financial report is due on October 15th. It must include the marketing budget analysis."
   }'
-
+```
 Response:
 {"status":"success"}
 
 Query cognitive memory:
-
+```
 curl -X POST http://127.0.0.1:8002/search \
   -H "Content-Type: application/json" \
   -d '{
@@ -186,7 +189,7 @@ curl -X POST http://127.0.0.1:8002/search \
     "category": "work",
     "query": "What deadlines do I have coming up?"
   }'
-
+```
 Response:
 
 {
@@ -203,7 +206,7 @@ Response:
 }
 
 Delete cognitive memories older than 90 days:
-
+```
 curl -X POST http://127.0.0.1:8002/delete \
   -H "Content-Type: application/json" \
   -d '{
@@ -211,7 +214,7 @@ curl -X POST http://127.0.0.1:8002/delete \
     "categories": ["personal", "work", "general"],
     "days": 90
   }'
-
+```
 Response
 
 {
