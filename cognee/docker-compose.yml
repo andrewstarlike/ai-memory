@@ -1,0 +1,114 @@
+version: '3.8'
+
+services:
+  # PostgreSQL with PGVector extension
+  cognee_db:
+    image: ankane/pgvector:latest
+    container_name: cognee_postgres
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5435:5432"
+    volumes:
+      - ./cognee_postgres_data:/var/lib/postgresql/data
+      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
+    environment:
+      - POSTGRES_USER=cognee
+      - POSTGRES_PASSWORD=cognee_password
+      - POSTGRES_DB=cognee_db
+      - POSTGRES_INITDB_ARGS=--auth-host=scram-sha-256
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cognee -d cognee_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - cognee_network
+
+  cognee_app:
+    image: python:3.11-slim
+    container_name: cognee_app
+    restart: unless-stopped
+    working_dir: /app
+    volumes:
+      - ./cognee_app:/app
+      - ./cognee_data:/app/.cognee
+      - /tmp/cognee_cache:/tmp/cognee_cache  # Add this line
+    environment:
+      # OpenAI Configuration
+      - LLM_PROVIDER=custom
+      - LLM_MODEL=openai/deepseek-chat
+      - LLM_API_KEY=${DEEPSEEK_API_KEY}
+      - LLM_ENDPOINT=https://api.deepseek.com/v1
+      
+      # Database Configuration - FIXED CONNECTION STRING
+      - DATABASE_URL=postgresql://cognee:cognee_password@cognee_db:5432/cognee_db
+      
+      # Vector Store Configuration
+      - EMBEDDING_API_KEY=${OPENAI_API_KEY}
+      - VECTOR_STORE=pgvector
+      - EMBEDDING_PROVIDER=openai
+      - EMBEDDING_MODEL=openai/text-embedding-3-small
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - EMBEDDING_DIMENSIONS=1536
+      
+      # Graph Store Configuration - Explicitly set to PostgreSQL
+      - GRAPH_STORE=postgresql
+      
+      # Cache Configuration
+      - CACHE_ENABLED=false  # Disable SQLite cache
+      - CACHE_DIR=/tmp/cognee_cache  # Use tmp directory
+      
+      # PostgreSQL-specific
+      - DB_PROVIDER=postgres
+      - DB_HOST=cognee_db
+      - DB_PORT=5432
+      - DB_NAME=cognee_db
+      - DB_USERNAME=cognee
+      - DB_PASSWORD=cognee_password
+      
+      # Application Configuration
+      - PYTHONUNBUFFERED=1
+      - HOME=/app
+      - PYTHONPATH=/app
+      
+      # Disable SQLite fallback
+      - USE_SQLITE=false
+      
+    ports:
+      - "127.0.0.1:8002:8002"
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+    command: >
+      bash -c "
+      apt-get update && 
+      apt-get install -y curl libpq-dev gcc postgresql-client && 
+      pip install --no-cache-dir 'cognee[postgres]' quart openai psycopg2-binary hypercorn aiosqlite && 
+      echo 'Waiting for database...' && 
+      until pg_isready -h cognee_db -p 5432 -U cognee; do 
+        echo 'Waiting for database...'; 
+        sleep 2; 
+      done && 
+      echo 'Database is ready!' && 
+      sleep 5 && 
+      python -c 'import cognee; print(\"Cognee version:\", cognee.__version__)' && 
+      hypercorn main:app --bind 0.0.0.0:8002 --worker-class asyncio
+      "
+    depends_on:
+      cognee_db:
+        condition: service_healthy
+    networks:
+      - cognee_network
+
+networks:
+  cognee_network:
+    driver: bridge

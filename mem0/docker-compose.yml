@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: mem0_qdrant
+    restart: unless-stopped
+    ports:
+      # CHANGED: Added 127.0.0.1 prefix to bind only to localhost
+      - "127.0.0.1:6333:6333"
+      - "127.0.0.1:6334:6334"
+    volumes:
+      - ./qdrant_data:/qdrant/storage
+    environment:
+      - QDRANT__LOG_LEVEL=INFO
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
+        reservations:
+          memory: 512M
+    networks:
+      - mem0_network
+
+  mem0_app:
+    image: python:3.11-slim
+    container_name: mem0_app
+    restart: unless-stopped
+    working_dir: /app
+    volumes:
+      - ./mem0_app:/app
+      - ./mem0_data:/app/data
+    environment:
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
+    # Expose the port to other services on the same network
+    ports:
+      - "127.0.0.1:8000:8000"
+    command: >
+      bash -c "
+      apt-get update && apt-get install -y curl &&
+      pip install --no-cache-dir mem0ai flask &&
+      sleep 10 &&
+      python -u /app/main.py
+      "
+    depends_on:
+      - qdrant
+    networks:
+      - mem0_network
+
+networks:
+  mem0_network:
+    driver: bridge

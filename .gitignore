@@ -1,0 +1,10 @@
+/mem0/.env
+/mem0/mem0_data
+/mem0/qdrant_data
+
+/graphiti/.env
+/graphiti/neo4j_data
+
+/cognee/.env
+/cognee/cognee_data
+/cognee/cognee_postgres_data
